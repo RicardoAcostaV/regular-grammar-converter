@@ -1,0 +1,18 @@
+#archivos compilados
+*.o
+*.out
+*.exe
+*.a
+*.so
+#Ejecutables locales
+/main
+/programa
+
+*~
+*.swp
+
+build/
+bin/
+
+.env
+
