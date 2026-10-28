@@ -100,7 +100,7 @@ void mostrar_lista(ListaD *lista){
     printf("\n--- Reglas cargadas en la lista ---\n");
     while(temporal != NULL){
         Gr expresion = temporal->expresion;
-        printf(" %s -> %s \n", expresion.izq, expresion.der); // \n para forzar la impresión
+        printf("%s ->  %s\n", expresion.izq, expresion.der); // \n para forzar la impresión
         temporal = temporal->sig;
     }
     printf("------------------------------------\n");
@@ -109,7 +109,7 @@ void mostrar_lista(ListaD *lista){
 
 int simplificar_expresion(ListaD *lista){
 
-    if(lista == NULL) return -1;
+    if(lista == NULL || lista->primero==NULL) return -1;
     Lista2 aux=lista->primero;
     while (aux!=NULL)
     {
@@ -128,11 +128,18 @@ int simplificar_expresion(ListaD *lista){
                 borrar = aux2;
 
                 aux2=aux2->sig;
-                if(borrar->sig != NULL) borrar->sig->ant = borrar->ant;
-                if(borrar->ant != NULL) borrar->ant->sig = borrar->sig;
+                if(borrar->sig != NULL) 
+                {borrar->sig->ant = borrar->ant;}
+                else{
+                    lista->ultimo = borrar->ant;
+                }
+                if(borrar->ant != NULL) {borrar->ant->sig = borrar->sig;}
+                else{
+                    lista->primero =borrar->sig;
+                }
                 free(borrar);
             }
-            else    aux2= aux2->sig;
+            else{    aux2= aux2->sig;}
         }
         aux = aux->sig;
         
@@ -155,7 +162,7 @@ int mostrar_contenido(char *nombre, ListaD *lista){
     char buff[256];
     while (fgets(buff, sizeof(buff), archivo) != NULL)
     {
-        buff[strcspn(buff, "\n")] = '\0';
+        buff[strcspn(buff, "\r\n")] = '\0';
 
         
         if (strlen(buff) == 0) continue;
@@ -164,10 +171,10 @@ int mostrar_contenido(char *nombre, ListaD *lista){
         char produccion[K] = "";
 
         int i = 0;
-        
-        while(buff[i] != '-' && buff[i] != '\0' && i < K - 1){
-            no_terminal[i] = buff[i];
-            i++;
+        while(buff[i]== ' ' || buff[i] == '\t')i++;
+        int k = 0;
+        while(buff[i] != '-' && buff[i] != '\0'&& buff[i] != ' ' && buff[i] != '\t'  &&i < K - 1){
+            no_terminal[k++] = buff[i++];
         }
         no_terminal[i] = '\0';
 
@@ -178,7 +185,8 @@ int mostrar_contenido(char *nombre, ListaD *lista){
             continue;
         }
 
-        
+        while(buff[i] == ' ' || buff[i] == '\t') i ++;
+
         int j = 0;
         while (buff[i] != '\0' && j < K - 1)
         {
@@ -188,11 +196,12 @@ int mostrar_contenido(char *nombre, ListaD *lista){
         }
         produccion[j] = '\0';
 
-        
-        Gr dato;
-        strcpy(dato.izq, no_terminal);
-        strcpy(dato.der, produccion);
-        insercion_final(lista, dato);
+        if(strlen(no_terminal) > 0) {
+            Gr dato;
+            strcpy(dato.izq, no_terminal);
+            strcpy(dato.der, produccion);
+            insercion_final(lista, dato);
+        }
     }
 
     fclose(archivo); 
@@ -204,12 +213,13 @@ int mostrar_contenido(char *nombre, ListaD *lista){
 
 void menu(){
     ListaD lista;
-    init_lista(&lista.primero,&lista.ultimo);
+    
     char nombre[50];
     int op = -1;
     int init = 0;
         do
     {
+        init_lista(&lista.primero,&lista.ultimo);
         op = -1;
         printf("-----------MENU------------\n");
         if(init == 0)printf("1) Iniciar\n ");
@@ -227,6 +237,7 @@ void menu(){
                 printf(" el archio no existe\n");
                 
             }
+            eliminar_lista(&lista);
             init = 1;
          
         }
