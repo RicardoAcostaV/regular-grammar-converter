@@ -88,50 +88,91 @@ void eliminar_lista(ListaD *lista){
     }
 }
 
+void eliminar_simplificar_tokens(char *token){
+    int i = 0, j = 0;
+    while (token[i] != '\0')
+    {
+        
+        if(token[i]!= '|' && token[i] != ' '){
+            token[j] = token[i];
+            j++;
+        }
+        
+        i++;
+    }
+    token[j] = '\0';
+   
+}
 
 
 int transformar_expresion(Gr *produccion){
-    char X[K];
-    char nu[K];
-    char aux[K];
+    char nu[K] = "";
+    char token[K];
     int i = 0;
-    int r=0, l =0;
-    while(produccion->der[i] != '\0'){
-        char prod[K] = produccion->der;
-        memset(aux,0,K);
-        memset(X,0,K);
-        int alpha = 0;
-        r++;
-        while(produccion->der[r]!= "|" || produccion->der[r]!= '\0'){
-            if(strcmp(produccion->der[r],produccion->izq) == 0){
-                alpha = 1;
-            }
-            else strcat(X,produccion->der[r]);
-            r++;
-        }
-        if(alpha){
-            aux[0] = "{";
-            strcat(aux,X);
-            strcat(aux,"}");
-            strcat(nu,aux);
-        }
-        else    strcat(nu,X);
-        l = r;
+    
+    char der_copia[K];
+    strcpy(der_copia, produccion->der);
 
-        i++;
-        
+    char *token_ptr = strtok(der_copia, "|");
+    
+    int primera = 1;
+
+    while (token_ptr != NULL) {
+        while (*token_ptr == ' ') token_ptr++;
+        int len = strlen(token_ptr);
+        while (len > 0 && token_ptr[len - 1] == ' ') {
+            token_ptr[len - 1] = '\0';
+            len--;
+        }
+
+        char *p = strstr(token_ptr, produccion->izq);
+        if (p != NULL) {
+            char aux[K];
+            char aux2[K];
+            int j = 0;
+            for (int i = 0; i < strlen(token_ptr); i++)
+        {
+            
+            if(token_ptr[i] != produccion->izq[0]){
+                //printf(" %c ", token_ptr[i]);    
+                aux2[j] = token_ptr[i];
+                j++;
+            }
+        }
+    
+            sprintf(aux, "{%s}", aux2);
+            
+            if (!primera) strcat(nu, " | ");
+            strcat(nu, aux);
+        } else {
+            if (!primera) strcat(nu, " | ");
+            strcat(nu, token_ptr);
+        }
+
+
+
+        primera = 0;
+        token_ptr = strtok(NULL, "|");
     }
-    memset(produccion->der,0,K);
-    strcat(produccion->der,nu);
+    eliminar_simplificar_tokens(nu);
+    memset(produccion->der, 0, K);
+    strcpy(produccion->der, nu);
+    
     return 0;
 }
 
 int transformar_lista(ListaD *lista){
+    if (lista == NULL) return -1;
     Lista2 aux = lista->primero;
     while (aux != NULL)
     {
         transformar_expresion(&aux->expresion);
         aux = aux->sig;
+    }
+    Lista2 aux_regreso = lista->ultimo;
+    while(aux_regreso != NULL){
+        transformar_expresion(&aux_regreso->expresion);
+        aux_regreso = aux_regreso->ant;
     }
     return 0;
 }
