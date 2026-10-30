@@ -88,19 +88,40 @@ void eliminar_lista(ListaD *lista){
     }
 }
 
-void eliminar_simplificar_tokens(char *token){
-    int i = 0, j = 0;
-    while (token[i] != '\0')
+void eliminar_espacios(char *token){
+    int i = 0, j =0;
+    while (token[i] != '\0' )
     {
-        
-        if(token[i]!= '|' && token[i] != ' '){
+        if(token[i] != ' '){
             token[j] = token[i];
             j++;
         }
+        i++;
+    }
+    token[j] = '\0'; 
+    
+}
+
+void eliminar_simplificar_tokens(char *token){
+    int i = 0, j = 0;
+    int flag  = 0;
+    while (token[i] != '\0')
+    {
+        
+        if(token[i]== '|' && flag == 0){
+            token[i] = '(';
+            flag = 1;
+        }
+        
         
         i++;
     }
-    token[j] = '\0';
+       
+    if(token[i] == '\0' && flag == 1){
+        token[i] = ')';
+        i++;
+    }          
+    token[i] = '\0';
    
 }
 
@@ -154,8 +175,8 @@ int transformar_expresion(Gr *produccion){
         primera = 0;
         token_ptr = strtok(NULL, "|");
     }
-    eliminar_simplificar_tokens(nu);
     memset(produccion->der, 0, K);
+    eliminar_espacios(nu);
     strcpy(produccion->der, nu);
     
     return 0;
@@ -164,9 +185,24 @@ int transformar_expresion(Gr *produccion){
 int transformar_lista(ListaD *lista){
     if (lista == NULL) return -1;
     Lista2 aux = lista->primero;
-    while (aux != NULL)
+    Lista2 base = lista->primero;
+    while (base->sig!= NULL);
     {
         transformar_expresion(&aux->expresion);
+        
+    }
+    
+    
+    while (aux != NULL)
+    {
+        char nu[K];
+        
+        
+        strcpy(nu,aux->expresion.der);
+        //printf(" NU: %s", nu);
+        eliminar_simplificar_tokens(nu);
+        eliminar_espacios(nu);
+        strcpy(aux->expresion.der,nu);
         aux = aux->sig;
     }
     Lista2 aux_regreso = lista->ultimo;
