@@ -75,6 +75,17 @@ int insercion_final(ListaD *lista, Gr dato){
     }
     return res;
 }
+void mostrar_lista(ListaD *lista){
+    Lista2 temporal = lista->primero;
+    printf("\n--- Reglas cargadas en la lista ---\n");
+    while(temporal != NULL){
+        Gr expresion = temporal->expresion;
+        //eliminar_simplificar_tokens(expresion.der);
+        printf("%s ->  %s\n", expresion.izq, expresion.der); // \n para forzar la impresión
+        temporal = temporal->sig;
+    }
+    printf("------------------------------------\n");
+}
 
 void eliminar_lista(ListaD *lista){
 
@@ -160,7 +171,9 @@ int transformar_expresion(Gr *produccion){
                 j++;
             }
         }
+            aux2[j] = '\0';
     
+            //printf("-%s-", aux2);
             sprintf(aux, "{%s}", aux2);
             
             if (!primera) strcat(nu, " | ");
@@ -182,34 +195,97 @@ int transformar_expresion(Gr *produccion){
     return 0;
 }
 
+
+void sustituir_expresion(char *original, char *a_sustituir){
+            char *t = strstr(original,a_sustituir);
+            if(t != NULL){
+                char reemplazo[K] = "";
+                int lon = t -a_sustituir ;
+                strncat(reemplazo,original,lon);
+                strcat(reemplazo,a_sustituir);
+                strcat(reemplazo,t+strlen(a_sustituir));
+                strcpy(original,reemplazo);
+            }
+}
+
+
+
 int transformar_lista(ListaD *lista){
     if (lista == NULL) return -1;
-    Lista2 aux = lista->primero;
+    
     Lista2 base = lista->primero;
-    while (base->sig!= NULL);
-    {
-        transformar_expresion(&aux->expresion);
+    while(base != NULL){
+        Lista2 aux = base;
         
+        while (aux != NULL)
+        {
+            transformar_expresion(&aux->expresion);
+            char nu[K];
+            strcpy(nu,aux->expresion.der);
+        
+            //eliminar_simplificar_tokens(nu);       
+            eliminar_espacios(nu);
+            strcpy(aux->expresion.der,nu);
+            if(aux == base){
+                aux = aux->sig;
+                continue;
+            }
+            sustituir_expresion(aux->expresion.der,base->expresion.izq);
+            
+            aux = aux->sig;
+        }
+        base = base->sig;
+        
+        
+    }
+
+    printf("\n----Transformar de ida");
+    mostrar_lista(lista);
+    
+    Lista2 temp = lista->primero;
+    while (temp != NULL)
+    {
+        eliminar_simplificar_tokens(temp->expresion.der);
+        temp = temp->sig;
     }
     
     
-    while (aux != NULL)
+    
+    Lista2 base_regreso = lista->ultimo;
+    while (base_regreso != NULL)
     {
-        char nu[K];
+        Lista2 aux_regreso = base_regreso;    
         
-        
-        strcpy(nu,aux->expresion.der);
-        //printf(" NU: %s", nu);
-        eliminar_simplificar_tokens(nu);
-        eliminar_espacios(nu);
-        strcpy(aux->expresion.der,nu);
-        aux = aux->sig;
-    }
-    Lista2 aux_regreso = lista->ultimo;
     while(aux_regreso != NULL){
-        transformar_expresion(&aux_regreso->expresion);
+            transformar_expresion(&aux_regreso->expresion);
+            char nu[K];
+            strcpy(nu,aux_regreso->expresion.der);
+        
+            //eliminar_simplificar_tokens(nu);       
+            eliminar_espacios(nu);
+            strcpy(aux_regreso->expresion.der,nu);
+            if(aux_regreso == base_regreso){
+                aux_regreso = aux_regreso->ant;
+                continue;
+            }
+            char *t = strstr(aux_regreso->expresion.der,base_regreso->expresion.izq);
+            
+            if(t != NULL){
+                char reemplazo[K] = "";
+                int lon = t -aux_regreso->expresion.der ;
+                strncat(reemplazo,aux_regreso->expresion.der,lon);
+                strcat(reemplazo,base_regreso->expresion.der);
+                strcat(reemplazo,t+strlen(base_regreso->expresion.izq));
+                strcpy(aux_regreso->expresion.der,reemplazo);
+            }
+        
         aux_regreso = aux_regreso->ant;
     }
+        base_regreso = base_regreso->ant;
+    }
+    
+    printf("\n----Transformar de regreso");
+    mostrar_lista(lista);
     return 0;
 }
 
@@ -220,16 +296,6 @@ void captura_nombre(char *nombre, int tam){
     fgets(nombre, tam, stdin);
     nombre[strcspn(nombre, "\n")]= '\0';
     strcat(nombre,".txt");
-}
-void mostrar_lista(ListaD *lista){
-    Lista2 temporal = lista->primero;
-    printf("\n--- Reglas cargadas en la lista ---\n");
-    while(temporal != NULL){
-        Gr expresion = temporal->expresion;
-        printf("%s ->  %s\n", expresion.izq, expresion.der); // \n para forzar la impresión
-        temporal = temporal->sig;
-    }
-    printf("------------------------------------\n");
 }
 
 
@@ -302,7 +368,7 @@ int mostrar_contenido(char *nombre, ListaD *lista){
         while(buff[i] != '-' && buff[i] != '\0'&& buff[i] != ' ' && buff[i] != '\t'  &&i < K - 1){
             no_terminal[k++] = buff[i++];
         }
-        no_terminal[i] = '\0';
+        no_terminal[k] = '\0';
 
         
         if (buff[i] == '-' && buff[i+1] == '>') {
@@ -333,9 +399,10 @@ int mostrar_contenido(char *nombre, ListaD *lista){
     fclose(archivo); 
     mostrar_lista(lista);
     simplificar_expresion(lista);
+    printf("\n----Lista simplificada----");
     mostrar_lista(lista);
     transformar_lista(lista);
-    mostrar_lista(lista);
+    //mostrar_lista(lista);
     return 1;
 }
 
@@ -365,6 +432,8 @@ void menu(){
                 printf(" el archio no existe\n");
                 
             }
+            Lista2 aux = lista.primero;
+            printf("\nExpresion regular: %s = %s\n", aux->expresion.izq, aux->expresion.der);
             eliminar_lista(&lista);
             init = 1;
          
